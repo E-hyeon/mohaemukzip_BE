@@ -28,7 +28,12 @@ management:
     health:
       db:
         enabled: true
-        
+  metrics:
+    distribution:
+      # RED 대시보드의 API별 p50/p95/p99 계산용 히스토그램 버킷
+      percentiles-histogram:
+        http.server.requests: true
+
 cloud:
   aws:
     region:

@@ -41,3 +41,12 @@ resources:
     memory: 512Mi
   limits:
     memory: 1Gi
+
+# kube-prometheus-stack (ServiceMonitor CRD) 이 먼저 설치돼 있어야 함
+serviceMonitor:
+  enabled: true
+  interval: 15s
+
+# RED 대시보드를 ConfigMap 으로 만들어 grafana sidecar 에 로드
+grafanaDashboard:
+  enabled: true

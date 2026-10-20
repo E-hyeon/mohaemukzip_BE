@@ -10,3 +10,7 @@ nodes:
       - containerPort: 30080
         hostPort: 8080
         protocol: TCP
+      # 호스트 3000 -> Grafana NodePort 30030
+      - containerPort: 30030
+        hostPort: 3000
+        protocol: TCP

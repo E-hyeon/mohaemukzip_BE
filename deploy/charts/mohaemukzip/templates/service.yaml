@@ -2,6 +2,8 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ .Release.Name }}
+  labels:
+    app: {{ .Release.Name }}
 spec:
   type: {{ .Values.service.type }}
   selector:
@@ -13,3 +15,7 @@ spec:
       {{- if eq .Values.service.type "NodePort" }}
       nodePort: {{ .Values.service.nodePort }}
       {{- end }}
+    # Prometheus 스크레이프용 actuator 포트
+    - name: management
+      port: 9091
+      targetPort: management

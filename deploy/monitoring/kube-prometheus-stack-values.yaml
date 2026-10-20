@@ -1,0 +1,29 @@
+# kind(단일 노드) 용 경량 설정
+alertmanager:
+  enabled: false
+
+# kind 에서는 접근 불가/불필요한 컨트롤 플레인 스크레이프 제외
+kubeEtcd:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeControllerManager:
+  enabled: false
+kubeProxy:
+  enabled: false
+
+prometheus:
+  prometheusSpec:
+    # release 라벨이 없는 ServiceMonitor(앱 차트)도 수집
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    retention: 2d
+
+grafana:
+  adminPassword: admin
+  service:
+    type: NodePort
+    nodePort: 30030   # kind-config.yaml 의 extraPortMappings 와 일치해야 함
+  sidecar:
+    dashboards:
+      searchNamespace: ALL   # 앱 네임스페이스(default)의 ConfigMap 도 읽음

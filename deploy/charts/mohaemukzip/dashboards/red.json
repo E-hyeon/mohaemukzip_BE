@@ -1,0 +1,198 @@
+{
+  "uid": "mohaemukzip-red",
+  "title": "mohaemukzip API RED",
+  "tags": ["mohaemukzip", "red", "spring-boot"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "time": { "from": "now-30m", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "ds",
+        "label": "Datasource",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": {}
+      },
+      {
+        "name": "uri",
+        "label": "API (uri)",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "${ds}" },
+        "query": { "query": "label_values(http_server_requests_seconds_count{application=\"mohaemukzip_BE\", uri!~\"/actuator.*\"}, uri)", "refId": "uri" },
+        "refresh": 2,
+        "sort": 1,
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "current": { "text": "All", "value": "$__all" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1, "type": "row", "title": "Overview", "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }
+    },
+    {
+      "id": 2, "type": "stat", "title": "Rate (req/s)",
+      "datasource": { "type": "prometheus", "uid": "${ds}" },
+      "gridPos": { "h": 4, "w": 8, "x": 0, "y": 1 },
+      "fieldConfig": { "defaults": { "unit": "reqps", "decimals": 2 }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "none", "graphMode": "area" },
+      "targets": [
+        { "refId": "A", "expr": "sum(rate(http_server_requests_seconds_count{application=\"mohaemukzip_BE\", uri=~\"$uri\", uri!~\"/actuator.*\"}[$__rate_interval]))" }
+      ]
+    },
+    {
+      "id": 3, "type": "stat", "title": "Error ratio (5xx)",
+      "datasource": { "type": "prometheus", "uid": "${ds}" },
+      "gridPos": { "h": 4, "w": 8, "x": 8, "y": 1 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit", "decimals": 2,
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green", "value": null },
+            { "color": "orange", "value": 0.01 },
+            { "color": "red", "value": 0.05 }
+          ] }
+        },
+        "overrides": []
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "area" },
+      "targets": [
+        { "refId": "A", "expr": "(sum(rate(http_server_requests_seconds_count{application=\"mohaemukzip_BE\", uri=~\"$uri\", uri!~\"/actuator.*\", status=~\"5..\"}[$__rate_interval])) or vector(0)) / sum(rate(http_server_requests_seconds_count{application=\"mohaemukzip_BE\", uri=~\"$uri\", uri!~\"/actuator.*\"}[$__rate_interval]))" }
+      ]
+    },
+    {
+      "id": 4, "type": "stat", "title": "Latency p95",
+      "datasource": { "type": "prometheus", "uid": "${ds}" },
+      "gridPos": { "h": 4, "w": 8, "x": 16, "y": 1 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s", "decimals": 3,
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green", "value": null },
+            { "color": "orange", "value": 0.5 },
+            { "color": "red", "value": 1 }
+          ] }
+        },
+        "overrides": []
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "area" },
+      "targets": [
+        { "refId": "A", "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_requests_seconds_bucket{application=\"mohaemukzip_BE\", uri=~\"$uri\", uri!~\"/actuator.*\"}[$__rate_interval])))" }
+      ]
+    },
+
+    {
+      "id": 10, "type": "row", "title": "Rate - 요청량", "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 }
+    },
+    {
+      "id": 11, "type": "timeseries", "title": "Request rate by API",
+      "datasource": { "type": "prometheus", "uid": "${ds}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "fieldConfig": { "defaults": { "unit": "reqps", "custom": { "fillOpacity": 10 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "refId": "A", "legendFormat": "{{method}} {{uri}}", "expr": "sum by (method, uri) (rate(http_server_requests_seconds_count{application=\"mohaemukzip_BE\", uri=~\"$uri\", uri!~\"/actuator.*\"}[$__rate_interval]))" }
+      ]
+    },
+    {
+      "id": 12, "type": "timeseries", "title": "Responses by status",
+      "datasource": { "type": "prometheus", "uid": "${ds}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "fieldConfig": { "defaults": { "unit": "reqps", "custom": { "fillOpacity": 30, "stacking": { "mode": "normal" } } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean"] }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "refId": "A", "legendFormat": "{{status}}", "expr": "sum by (status) (rate(http_server_requests_seconds_count{application=\"mohaemukzip_BE\", uri=~\"$uri\", uri!~\"/actuator.*\"}[$__rate_interval]))" }
+      ]
+    },
+
+    {
+      "id": 20, "type": "row", "title": "Errors - 5xx", "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 }
+    },
+    {
+      "id": 21, "type": "timeseries", "title": "5xx rate by API",
+      "datasource": { "type": "prometheus", "uid": "${ds}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 15 },
+      "fieldConfig": { "defaults": { "unit": "reqps", "custom": { "fillOpacity": 10 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "refId": "A", "legendFormat": "{{method}} {{uri}}", "expr": "sum by (method, uri) (rate(http_server_requests_seconds_count{application=\"mohaemukzip_BE\", uri=~\"$uri\", uri!~\"/actuator.*\", status=~\"5..\"}[$__rate_interval]))" }
+      ]
+    },
+    {
+      "id": 22, "type": "timeseries", "title": "Error ratio by API",
+      "datasource": { "type": "prometheus", "uid": "${ds}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 15 },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "custom": { "fillOpacity": 10 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "refId": "A", "legendFormat": "{{method}} {{uri}}", "expr": "sum by (method, uri) (rate(http_server_requests_seconds_count{application=\"mohaemukzip_BE\", uri=~\"$uri\", uri!~\"/actuator.*\", status=~\"5..\"}[$__rate_interval])) / sum by (method, uri) (rate(http_server_requests_seconds_count{application=\"mohaemukzip_BE\", uri=~\"$uri\", uri!~\"/actuator.*\"}[$__rate_interval]))" }
+      ]
+    },
+
+    {
+      "id": 30, "type": "row", "title": "Duration - 지연", "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 }
+    },
+    {
+      "id": 31, "type": "timeseries", "title": "Latency p95 by API",
+      "datasource": { "type": "prometheus", "uid": "${ds}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "fieldConfig": { "defaults": { "unit": "s", "custom": { "fillOpacity": 0 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "refId": "A", "legendFormat": "{{method}} {{uri}}", "expr": "histogram_quantile(0.95, sum by (le, method, uri) (rate(http_server_requests_seconds_bucket{application=\"mohaemukzip_BE\", uri=~\"$uri\", uri!~\"/actuator.*\"}[$__rate_interval])))" }
+      ]
+    },
+    {
+      "id": 32, "type": "timeseries", "title": "Latency p50 / p95 / p99 (selected APIs)",
+      "datasource": { "type": "prometheus", "uid": "${ds}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+      "fieldConfig": { "defaults": { "unit": "s", "custom": { "fillOpacity": 0 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "refId": "A", "legendFormat": "p50", "expr": "histogram_quantile(0.50, sum by (le) (rate(http_server_requests_seconds_bucket{application=\"mohaemukzip_BE\", uri=~\"$uri\", uri!~\"/actuator.*\"}[$__rate_interval])))" },
+        { "refId": "B", "legendFormat": "p95", "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_requests_seconds_bucket{application=\"mohaemukzip_BE\", uri=~\"$uri\", uri!~\"/actuator.*\"}[$__rate_interval])))" },
+        { "refId": "C", "legendFormat": "p99", "expr": "histogram_quantile(0.99, sum by (le) (rate(http_server_requests_seconds_bucket{application=\"mohaemukzip_BE\", uri=~\"$uri\", uri!~\"/actuator.*\"}[$__rate_interval])))" }
+      ]
+    },
+
+    {
+      "id": 40, "type": "row", "title": "API summary", "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 32 }
+    },
+    {
+      "id": 41, "type": "table", "title": "RED per API (선택한 시간 범위 기준)",
+      "datasource": { "type": "prometheus", "uid": "${ds}" },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 33 },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Rate" }, "properties": [{ "id": "unit", "value": "reqps" }, { "id": "decimals", "value": 3 }] },
+          { "matcher": { "id": "byName", "options": "Error ratio" }, "properties": [{ "id": "unit", "value": "percentunit" }, { "id": "decimals", "value": 2 }, { "id": "custom.cellOptions", "value": { "type": "color-background" } }, { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 0.01 }, { "color": "red", "value": 0.05 }] } }] },
+          { "matcher": { "id": "byName", "options": "p95" }, "properties": [{ "id": "unit", "value": "s" }, { "id": "decimals", "value": 3 }, { "id": "custom.cellOptions", "value": { "type": "color-background" } }, { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 0.5 }, { "color": "red", "value": 1 }] } }] }
+        ]
+      },
+      "options": { "showHeader": true, "sortBy": [{ "displayName": "Rate", "desc": true }] },
+      "targets": [
+        { "refId": "A", "format": "table", "instant": true, "expr": "sum by (method, uri) (rate(http_server_requests_seconds_count{application=\"mohaemukzip_BE\", uri=~\"$uri\", uri!~\"/actuator.*\"}[$__range]))" },
+        { "refId": "B", "format": "table", "instant": true, "expr": "(sum by (method, uri) (rate(http_server_requests_seconds_count{application=\"mohaemukzip_BE\", uri=~\"$uri\", uri!~\"/actuator.*\", status=~\"5..\"}[$__range])) or sum by (method, uri) (rate(http_server_requests_seconds_count{application=\"mohaemukzip_BE\", uri=~\"$uri\", uri!~\"/actuator.*\"}[$__range])) * 0) / sum by (method, uri) (rate(http_server_requests_seconds_count{application=\"mohaemukzip_BE\", uri=~\"$uri\", uri!~\"/actuator.*\"}[$__range]))" },
+        { "refId": "C", "format": "table", "instant": true, "expr": "histogram_quantile(0.95, sum by (le, method, uri) (rate(http_server_requests_seconds_bucket{application=\"mohaemukzip_BE\", uri=~\"$uri\", uri!~\"/actuator.*\"}[$__range])))" }
+      ],
+      "transformations": [
+        { "id": "merge", "options": {} },
+        { "id": "organize", "options": {
+          "excludeByName": { "Time": true },
+          "renameByName": { "method": "Method", "uri": "API", "Value #A": "Rate", "Value #B": "Error ratio", "Value #C": "p95" }
+        } }
+      ]
+    }
+  ]
+}
