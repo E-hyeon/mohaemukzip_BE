@@ -1,0 +1,20 @@
+image:
+  repository: mysql
+  tag: "8.0"
+
+auth:
+  rootPassword: root-change-me
+  database: mohaemukzip
+  username: mohaemukzip
+  password: change-me
+
+persistence:
+  size: 2Gi
+  storageClass: ""
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 512Mi
+  limits:
+    memory: 1Gi
