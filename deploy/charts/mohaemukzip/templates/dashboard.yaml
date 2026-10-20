@@ -1,0 +1,12 @@
+{{- if .Values.grafanaDashboard.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-red-dashboard
+  labels:
+    # kube-prometheus-stack 의 grafana sidecar 가 이 라벨로 대시보드를 읽는다
+    grafana_dashboard: "1"
+data:
+  red.json: |-
+{{ .Files.Get "dashboards/red.json" | indent 4 }}
+{{- end }}

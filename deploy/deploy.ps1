@@ -29,9 +29,16 @@ Run @('kind', 'load', 'docker-image', $image, '--name', $cluster)
 $extra = @()
 if (Test-Path $secretFile) { $extra = @('-f', $secretFile) }
 
+# 앱 차트의 ServiceMonitor CRD 가 필요하므로 kube-prometheus-stack 을 먼저 설치
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts --force-update | Out-Null
+Run @('helm', 'upgrade', '--install', 'kube-prometheus-stack', 'prometheus-community/kube-prometheus-stack',
+      '--namespace', 'monitoring', '--create-namespace',
+      '-f', "$PSScriptRoot\monitoring\kube-prometheus-stack-values.yaml", '--wait', '--timeout', '10m')
+
 # 같은 secret 파일을 양쪽에 넘김 (mysql 은 auth.*, 앱은 db.* / secrets.* 를 읽음)
 Run (@('helm', 'upgrade', '--install', 'mysql', "$PSScriptRoot\charts\mysql", '--wait', '--timeout', '5m') + $extra)
 Run @('helm', 'upgrade', '--install', 'redis', "$PSScriptRoot\charts\redis", '--wait', '--timeout', '3m')
 Run (@('helm', 'upgrade', '--install', 'mohaemukzip', "$PSScriptRoot\charts\mohaemukzip", '--wait', '--timeout', '5m') + $extra)
 
 Write-Host "`n배포 완료: http://localhost:8080/swagger-ui  (health: kubectl get pods)"
+Write-Host "Grafana: http://localhost:3000 (admin/admin) -> Dashboards -> mohaemukzip API RED"
