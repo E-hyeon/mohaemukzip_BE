@@ -1,0 +1,12 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: mohaemukzip
+nodes:
+  - role: control-plane
+    # Docker Desktop(WSL2)이 cgroup v1 이라 cgroup v1 을 지원하는 k8s 버전으로 고정
+    image: kindest/node:v1.32.8
+    extraPortMappings:
+      # 호스트 8080 -> 앱 NodePort 30080
+      - containerPort: 30080
+        hostPort: 8080
+        protocol: TCP

@@ -1,0 +1,43 @@
+﻿replicaCount: 1
+
+image:
+  repository: mohaemukzip-api
+  tag: local
+  pullPolicy: IfNotPresent
+
+service:
+  type: NodePort
+  port: 8080
+  nodePort: 30080   # kind-config.yaml 의 extraPortMappings 와 일치해야 함
+
+# 클러스터 내 MySQL(릴리스명 mysql) 접속 정보. mysql 차트의 auth 값과 맞출 것
+db:
+  host: mysql
+  port: 3306
+  name: mohaemukzip
+  username: mohaemukzip
+  password: change-me
+
+# 일반 환경변수
+env:
+  SPRING_PROFILES_ACTIVE: prod
+  TRANSCRIPT_PROXY_URL: ""
+  # Gmail 로그인 실패가 readiness 를 DOWN 으로 만들지 않도록 mail health 제외
+  MANAGEMENT_HEALTH_MAIL_ENABLED: "false"
+
+# 민감 환경변수 (Secret 으로 생성). 실제 값은 values-secret.yaml 로 덮어쓰기
+secrets:
+  JWT_SECRET: bG9jYWwtZGV2LWp3dC1zZWNyZXQtY2hhbmdlLW1lLWF0LWxlYXN0LTMyLWJ5dGVz  # base64 인코딩 값이어야 함
+  GEMINI_API_KEY: placeholder
+  GEMINI_RECIPE_KEY: placeholder
+  YOUTUBE_API_KEY: placeholder
+  KAKAO_REST_API_KEY: placeholder
+  MAIL_USERNAME: placeholder
+  MAIL_PASSWORD: placeholder
+
+resources:
+  requests:
+    cpu: 200m
+    memory: 512Mi
+  limits:
+    memory: 1Gi

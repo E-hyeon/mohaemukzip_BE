@@ -44,3 +44,5 @@ venv/
 # Logs
 logs/
 *.log
+
+/deploy/values-secret.yaml
